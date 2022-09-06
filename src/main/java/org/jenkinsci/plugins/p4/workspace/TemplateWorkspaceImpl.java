@@ -76,6 +76,10 @@ public class TemplateWorkspaceImpl extends Workspace implements Serializable {
 			Client implClient = new Client(connection);
 			implClient.setName(clientName);
 			implClient.setOwnerName(user);
+
+			// Set client type (JENKINS-48471), not possible if client already exists
+			implClient.setType(itemplate.getType());
+
 			connection.createClient(implClient);
 			iclient = connection.getClient(clientName);
 		}
