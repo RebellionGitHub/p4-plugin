@@ -71,6 +71,13 @@ public class TemplateWorkspaceImpl extends Workspace implements Serializable {
 		String clientName = getFullName();
 
 		IClient iclient = connection.getClient(clientName);
+
+		// If template client type has changed, delete client to recreate (JENKINS-48471)
+		if (iclient != null && !iclient.getType().equals(itemplate.getType())) {
+			connection.deleteClient(clientName, false);
+			iclient = null;
+		}
+
 		if (iclient == null) {
 			logger.info("P4: Creating template client: " + clientName);
 			Client implClient = new Client(connection);
