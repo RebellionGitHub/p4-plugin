@@ -56,5 +56,11 @@
         	<f:checkbox title="${%Hide Server Messages for all Perforce commands}" default="false"/>
         </f:entry>
     </f:section>
-	
+
+    <f:section title="Perforce: Manual Workspace Options">
+		<f:entry title="${%Default workspace spec type}" field="defaultSpecType">
+			<f:select id="id.type"/>
+		</f:entry>
+    </f:section>
+
 </j:jelly>

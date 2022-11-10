@@ -72,6 +72,8 @@ import org.jenkinsci.plugins.p4.workspace.StaticWorkspaceImpl;
 import org.jenkinsci.plugins.p4.workspace.StreamWorkspaceImpl;
 import org.jenkinsci.plugins.p4.workspace.TemplateWorkspaceImpl;
 import org.jenkinsci.plugins.p4.workspace.Workspace;
+import org.jenkinsci.plugins.p4.workspace.WorkspaceSpec;
+import org.jenkinsci.plugins.p4.workspace.WorkspaceSpecType;
 import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition;
 import org.jenkinsci.plugins.workflow.flow.FlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -950,6 +952,8 @@ public class PerforceScm extends SCM {
 
 		private boolean lastSuccess;
 
+		private String defaultSpecType;
+		
 		public boolean isAutoSave() {
 			return autoSave;
 		}
@@ -1006,6 +1010,15 @@ public class PerforceScm extends SCM {
 			this.lastSuccess = lastSuccess;
 		}
 
+		public WorkspaceSpecType getDefaultSpecType() {
+			for (WorkspaceSpecType type : WorkspaceSpecType.values()) {
+				if (defaultSpecType == type.name()) {
+					return type;
+				}
+			}
+			return WorkspaceSpecType.WRITABLE;
+		}
+		
 		/**
 		 * public no-argument constructor
 		 */
@@ -1096,6 +1109,13 @@ public class PerforceScm extends SCM {
 				hideMessages = false;
 			}
 
+			try {
+				defaultSpecType = json.getString("defaultSpecType");
+			} catch (JSONException e) {
+				logger.info("Unable to read manual workspace options in configuration");
+				defaultSpecType = "WRITABLE";
+			}
+			
 			save();
 			return true;
 		}
@@ -1122,6 +1142,21 @@ public class PerforceScm extends SCM {
 		 */
 		public FormValidation doCheckCredential(@AncestorInPath Item project, @QueryParameter String value) {
 			return P4CredentialsImpl.doCheckCredential(project, value);
+		}
+		
+		/**
+		 * DefaultSpecType list, a Jelly config method for the global settings.
+		 *
+		 * @param defaiultSpecType Current setting
+		 * @return A list of workspace spec type items to populate the jelly
+		 * Select list.
+		 */
+		public ListBoxModel doFillDefaultSpecTypeItems(@QueryParameter String defaultSpecType) {
+			ListBoxModel list = new ListBoxModel();
+			for (WorkspaceSpecType type : WorkspaceSpecType.values()) {
+				list.add(new ListBoxModel.Option(type.name(), type.name(), defaultSpecType.matches(type.name())));
+			}
+			return list;
 		}
 	}
 
