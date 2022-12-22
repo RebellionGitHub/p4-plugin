@@ -2,7 +2,10 @@ package org.jenkinsci.plugins.p4.workspace;
 
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
+import com.perforce.p4java.core.IChangelistSummary;
+import com.perforce.p4java.core.IChangelist.Type;
 import com.perforce.p4java.impl.mapbased.client.Client;
+import com.perforce.p4java.option.server.GetChangelistsOptions;
 import com.perforce.p4java.option.server.SwitchClientViewOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import hudson.Extension;
@@ -12,6 +15,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class TemplateWorkspaceImpl extends Workspace implements Serializable {
@@ -74,8 +78,16 @@ public class TemplateWorkspaceImpl extends Workspace implements Serializable {
 
 		// If template client type has changed, delete client to recreate (JENKINS-48471)
 		if (iclient != null && !iclient.getType().equals(itemplate.getType())) {
-			connection.deleteClient(clientName, false);
-			iclient = null;
+			GetChangelistsOptions getChangelistOpts = new GetChangelistsOptions()
+				.setClientName(clientName)
+				.setType(Type.PENDING);
+			List<IChangelistSummary> pendingChanges = connection.getChangelists(null, getChangelistOpts);
+			if (pendingChanges.isEmpty()) {
+				connection.deleteClient(clientName, false);
+				iclient = null;
+			} else {
+				logger.info("P4: Client '" + clientName + "' has files open, skipping template client creation.");
+			}
 		}
 
 		if (iclient == null) {
