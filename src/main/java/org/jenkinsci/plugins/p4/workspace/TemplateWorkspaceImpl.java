@@ -2,10 +2,9 @@ package org.jenkinsci.plugins.p4.workspace;
 
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
-import com.perforce.p4java.core.IChangelistSummary;
-import com.perforce.p4java.core.IChangelist.Type;
+import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.impl.mapbased.client.Client;
-import com.perforce.p4java.option.server.GetChangelistsOptions;
+import com.perforce.p4java.option.server.OpenedFilesOptions;
 import com.perforce.p4java.option.server.SwitchClientViewOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import hudson.Extension;
@@ -62,7 +61,7 @@ public class TemplateWorkspaceImpl extends Workspace implements Serializable {
 	@Override
 	public IClient setClient(IOptionsServer connection, String user)
 			throws Exception {
-
+		
 		String template = getTemplateClient(connection);
 
 		// Check template exists or exit early
@@ -78,11 +77,11 @@ public class TemplateWorkspaceImpl extends Workspace implements Serializable {
 
 		// If template client type has changed, delete client to recreate (JENKINS-48471)
 		if (iclient != null && !iclient.getType().equals(itemplate.getType())) {
-			GetChangelistsOptions getChangelistOpts = new GetChangelistsOptions()
-				.setClientName(clientName)
-				.setType(Type.PENDING);
-			List<IChangelistSummary> pendingChanges = connection.getChangelists(null, getChangelistOpts);
-			if (pendingChanges.isEmpty()) {
+			OpenedFilesOptions getOpenedFilesOpts = new OpenedFilesOptions()
+				.setClientName(clientName);
+			List<IFileSpec> openedFiles = connection.getOpenedFiles(null, getOpenedFilesOpts);
+
+			if (openedFiles.isEmpty()) {
 				connection.deleteClient(clientName, false);
 				iclient = null;
 			} else {
